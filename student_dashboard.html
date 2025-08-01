@@ -1,119 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Student Dashboard</title>
+  <meta charset="UTF-8" />
+  <title>Student Dashboard – Tyneceploh Educational Foundation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
-      background-color: #f2f2f2;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+      background: #f9f9f9;
     }
     h2 {
-      text-align: center;
       color: #333;
     }
     table {
-      width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      width: 100%;
+      margin-top: 20px;
     }
     th, td {
       border: 1px solid #aaa;
       padding: 8px;
-      text-align: center;
+      text-align: left;
     }
     th {
-      background-color: #555;
+      background-color: #6c63ff;
       color: white;
     }
-    tr:nth-child(even) {
-      background-color: #eee;
-    }
-    #logout {
-      margin-top: 15px;
-      background-color: crimson;
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      cursor: pointer;
+    #message {
+      margin-top: 20px;
+      color: red;
     }
   </style>
 </head>
 <body>
+  <h2>Student Approved Grades</h2>
 
-  <h2>Welcome, <span id="studentName"></span></h2>
+  <div id="message"></div>
 
-  <button id="logout" onclick="logout()">Logout</button>
-
-  <h3>Your Approved Grades</h3>
-  <table id="gradesTable">
+  <table id="gradesTable" style="display:none;">
     <thead>
       <tr>
         <th>Subject</th>
-        <th>1st</th>
-        <th>2nd</th>
-        <th>3rd</th>
-        <th>Semester Exam</th>
-        <th>Semester Average</th>
-        <th>4th</th>
-        <th>5th</th>
-        <th>6th</th>
-        <th>Final Exam</th>
+        <th>1st Period</th>
+        <th>2nd Period</th>
+        <th>3rd Period</th>
+        <th>Semester 1 Exam</th>
+        <th>Semester 1 Average</th>
+        <th>4th Period</th>
+        <th>5th Period</th>
+        <th>6th Period</th>
+        <th>Semester 2 Exam</th>
+        <th>Semester 2 Average</th>
         <th>Yearly Average</th>
-        <th>Status</th>
-        <th>Approved At</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="gradesBody"></tbody>
   </table>
 
   <script>
-    const dashboardURL = "https://script.google.com/macros/s/AKfycbzqRwxhDAMt9OpeRaPGR_Htzl_Qv0hX5KPoBDYvISF4zmvv8A0OqNo0tD-NYWc9MI-Q/exec";
+    const backendUrl = "https://script.google.com/macros/s/AKfycbzqRwxhDAMt9OpeRaPGR_Htzl_Qv0hX5KPoBDYvISF4zmvv8A0OqNo0tD-NYWc9MI-Q/exec";
 
-    // Get student name from localStorage (set during login)
-    const studentName = localStorage.getItem("studentName") || "Student";
-    document.getElementById("studentName").innerText = studentName;
-
-    // Fetch approved grades
-    fetch(dashboardURL + "?type=student_grades&student=" + encodeURIComponent(studentName))
-      .then(response => response.json())
-      .then(data => {
-        const tbody = document.querySelector("#gradesTable tbody");
-        tbody.innerHTML = "";
-
-        if (data.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='13'>No approved grades found.</td></tr>";
-        } else {
-          data.forEach(row => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${row.Subject}</td>
-              <td>${row.First}</td>
-              <td>${row.Second}</td>
-              <td>${row.Third}</td>
-              <td>${row.SemesterExam}</td>
-              <td>${row.SemesterAverage}</td>
-              <td>${row.Fourth}</td>
-              <td>${row.Fifth}</td>
-              <td>${row.Sixth}</td>
-              <td>${row.FinalExam}</td>
-              <td>${row.YearlyAverage}</td>
-              <td>${row.Status}</td>
-              <td>${row.ApprovedAt}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching student grades:", error);
-      });
-
-    function logout() {
-      localStorage.removeItem("studentName");
-      window.location.href = "student_login.html";
+    // Get student ID from URL query parameter
+    function getQueryParam(param) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(param);
     }
-  </script>
 
+    async function loadGrades() {
+      const studentId = getQueryParam("studentID");
+      const messageDiv = document.getElementById("message");
+      const gradesTable = document.getElementById("gradesTable");
+      const gradesBody = document.getElementById("gradesBody");
+
+      if (!studentId) {
+        messageDiv.textContent = "Student ID missing in URL.";
+        return;
+      }
+
+      try {
+        const response = await fetch(`${backendUrl}?getApprovedGradesFor=${encodeURIComponent(studentId)}`);
+        const data = await response.json();
+
+        if (data.status === "success") {
+          gradesTable.style.display = "table";
+          gradesBody.innerHTML = "";
+
+          data.grades.forEach(row => {
+            const tr = document.createElement("tr");
+
+            // For each expected column, fill data or leave empty
+            const columns = [
+              row.subject || "",
+              row.period1 || "",
+              row.period2 || "",
+              row.period3 || "",
+              row.sem1Exam || "",
+              row.sem1Avg || "",
+              row.period4 || "",
+              row.period5 || "",
+              row.period6 || "",
+              row.sem2Exam || "",
+              row.sem2Avg || "",
+              row.yearlyAvg || ""
+            ];
+
+            columns.forEach(cell => {
+              const td = document.createElement("td");
+              td.textContent = cell;
+              tr.appendChild(td);
+            });
+
+            gradesBody.appendChild(tr);
+          });
+        } else {
+          messageDiv.textContent = "No approved grades found for this student.";
+        }
+      } catch (error) {
+        messageDiv.textContent = "Error fetching grades. Please try again later.";
+        console.error(error);
+      }
+    }
+
+    loadGrades();
+  </script>
 </body>
-          </html>
+</html>
