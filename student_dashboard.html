@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 10px;
+      background-color: #f2f2f2;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #555;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #eee;
+    }
+    #logout {
+      margin-top: 15px;
+      background-color: crimson;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Welcome, <span id="studentName"></span></h2>
+
+  <button id="logout" onclick="logout()">Logout</button>
+
+  <h3>Your Approved Grades</h3>
+  <table id="gradesTable">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>1st</th>
+        <th>2nd</th>
+        <th>3rd</th>
+        <th>Semester Exam</th>
+        <th>Semester Average</th>
+        <th>4th</th>
+        <th>5th</th>
+        <th>6th</th>
+        <th>Final Exam</th>
+        <th>Yearly Average</th>
+        <th>Status</th>
+        <th>Approved At</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const dashboardURL = "https://script.google.com/macros/s/AKfycbzqRwxhDAMt9OpeRaPGR_Htzl_Qv0hX5KPoBDYvISF4zmvv8A0OqNo0tD-NYWc9MI-Q/exec";
+
+    // Get student name from localStorage (set during login)
+    const studentName = localStorage.getItem("studentName") || "Student";
+    document.getElementById("studentName").innerText = studentName;
+
+    // Fetch approved grades
+    fetch(dashboardURL + "?type=student_grades&student=" + encodeURIComponent(studentName))
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.querySelector("#gradesTable tbody");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='13'>No approved grades found.</td></tr>";
+        } else {
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${row.Subject}</td>
+              <td>${row.First}</td>
+              <td>${row.Second}</td>
+              <td>${row.Third}</td>
+              <td>${row.SemesterExam}</td>
+              <td>${row.SemesterAverage}</td>
+              <td>${row.Fourth}</td>
+              <td>${row.Fifth}</td>
+              <td>${row.Sixth}</td>
+              <td>${row.FinalExam}</td>
+              <td>${row.YearlyAverage}</td>
+              <td>${row.Status}</td>
+              <td>${row.ApprovedAt}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching student grades:", error);
+      });
+
+    function logout() {
+      localStorage.removeItem("studentName");
+      window.location.href = "student_login.html";
+    }
+  </script>
+
+</body>
+          </html>
