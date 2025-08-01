@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Teacher Dashboard – Tyneceploh Educational Foundation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    h2 { color: #333; text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #6c63ff; color: white; }
+    input[type="number"] { width: 60px; }
+    button { margin-top: 15px; padding: 10px 20px; background-color: #6c63ff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #574b90; }
+    #message { margin-top: 15px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h2>Teacher Dashboard</h2>
+  <p id="welcome"></p>
+
+  <div id="gradeFormContainer"></div>
+
+  <div id="message"></div>
+
+  <script>
+    // Get teacherID from URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const teacherID = urlParams.get('teacherID');
+    const welcomeEl = document.getElementById('welcome');
+    const container = document.getElementById('gradeFormContainer');
+    const messageEl = document.getElementById('message');
+
+    if (!teacherID) {
+      container.innerHTML = "<p style='color:red; text-align:center;'>Teacher ID missing in URL.</p>";
+      throw new Error('Teacher ID missing');
+    }
+
+    // Show teacher welcome message
+    welcomeEl.textContent = `Logged in as Teacher: ${teacherID}`;
+
+    // Fetch the teacher's class and students from backend
+    async function loadStudents() {
+      messageEl.textContent = 'Loading students...';
+
+      try {
+        const response = await fetch(`https://script.google.com/macros/s/YOUR_DASHBOARD_GS_DEPLOY_URL/exec?action=getStudentsByTeacher&teacherID=${encodeURIComponent(teacherID)}`);
+        const data = await response.json();
+
+        if (data.status !== 'success') {
+          container.innerHTML = '<p>No students found or error loading students.</p>';
+          messageEl.textContent = '';
+          return;
+        }
+
+        buildGradeForm(data.students);
+        messageEl.textContent = '';
+      } catch (e) {
+        container.innerHTML = '<p>Error loading students data.</p>';
+        messageEl.textContent = '';
+      }
+    }
+
+    // Build grade submission form
+    function buildGradeForm(students) {
+      if (students.length === 0) {
+        container.innerHTML = '<p>No students assigned to your class.</p>';
+        return;
+      }
+
+      let html = '<form id="gradeForm">';
+      students.forEach((student, index) => {
+        html += `
+          <fieldset style="margin-bottom: 20px; border: 1px solid #ccc; padding: 10px;">
+            <legend><strong>Student: ${student.Name} (ID: ${student.ID})</strong></legend>
+            <label>Subject: <input type="text" name="subject_${index}" placeholder="Subject Name" required></label><br><br>
+            <label>Period:
+              <select name="period_${index}" required>
+                <option value="">Select Period</option>
+                <option value="1">1st Period</option>
+                <option value="2">2nd Period</option>
+                <option value="3">3rd Period</option>
+                <option value="4">4th Period</option>
+                <option value="5">5th Period</option>
+                <option value="6">6th Period</option>
+              </select>
+            </label><br><br>
+            <label>Score: <input type="number" name="score_${index}" min="0" max="100" required></label>
+            <input type="hidden" name="studentID_${index}" value="${student.ID}">
+          </fieldset>
+        `;
+      });
+
+      html += `<button type="submit">Submit Grades</button></form>`;
+      container.innerHTML = html;
+
+      // Attach submit event
+      document.getElementById('gradeForm').addEventListener('submit', submitGrades);
+    }
+
+    // Submit grades handler
+    async function submitGrades(event) {
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const grades = [];
+
+      // Collect data per student entry
+      for (let i = 0; i < formData.entries.length / 4; i++) {
+        const studentID = formData.get(`studentID_${i}`);
+        const subject = formData.get(`subject_${i}`);
+        const period = formData.get(`period_${i}`);
+        const score = formData.get(`score_${i}`);
+
+        grades.push({ studentID, subject, period, score });
+      }
+
+      messageEl.textContent = 'Submitting grades...';
+
+      try {
+        const response = await fetch('https://script.google.com/macros/s/YOUR_DASHBOARD_GS_DEPLOY_URL/exec', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'submitGrades',
+            teacherID,
+            grades
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          messageEl.style.color = 'green';
+          messageEl.textContent = 'Grades submitted successfully and sent for approval.';
+          event.target.reset();
+        } else {
+          messageEl.style.color = 'red';
+          messageEl.textContent = 'Failed to submit grades. Please try again.';
+        }
+      } catch (e) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Error submitting grades. Please try again later.';
+      }
+    }
+
+    // Initialize
+    loadStudents();
+  </script>
+
+</body>
+</html>
