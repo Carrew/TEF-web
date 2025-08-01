@@ -47,12 +47,12 @@
   <input type="text" id="studentId" placeholder="Enter Your Student ID" />
   <input type="password" id="pin" placeholder="Enter Your PIN" />
   <br />
-  <button onclick="checkResult()">Login</button>
+  <button onclick="checkLogin()">Login</button>
 
   <div id="result"></div>
 
   <script>
-    async function checkResult() {
+    async function checkLogin() {
       const studentId = document.getElementById("studentId").value.trim();
       const pin = document.getElementById("pin").value.trim();
       const resultBox = document.getElementById("result");
@@ -66,8 +66,8 @@
       resultBox.innerHTML = "Checking credentials...";
 
       try {
-        const url = `https://script.google.com/macros/s/AKfycbz3-cZZM_Zl23gfNJFczdOHL_ywDz0Rxi38ao4O82GU1_edzNtQpJF3M5W4eAU_KR9s/exec?id=${encodeURIComponent(studentId)}&pin=${encodeURIComponent(pin)}&role=student`;
-        
+        const url = `https://script.google.com/macros/s/AKfycbxD4I6gTNaDa-HgtZQazLP2hZDOa-yEcyt0IBkJNJ008xMu6aDx3Gw0TuY-MgHv83qO/exec?id=${encodeURIComponent(studentId)}&pin=${encodeURIComponent(pin)}&role=student`;
+
         const response = await fetch(url);
         const data = await response.json();
 
@@ -77,10 +77,10 @@
             window.location.href = `student_results.html?id=${encodeURIComponent(studentId)}`;
           }, 1500);
         } else {
-          resultBox.innerHTML = `<span style="color:red;">Invalid ID or PIN.</span>`;
+          resultBox.innerHTML = '<span style="color:red;">Invalid ID or PIN. Please try again.</span>';
         }
-      } catch (err) {
-        resultBox.innerHTML = `<span style="color:red;">Error connecting to server. Please try again.</span>`;
+      } catch (error) {
+        resultBox.innerHTML = '<span style="color:red;">Error connecting to server. Please check your internet.</span>';
       }
     }
   </script>
