@@ -2,30 +2,60 @@
 <html>
 <head>
   <title>Principal Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #ffe0b2;
+    }
+    .container {
+      background: white;
+      max-width: 400px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px gray;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+    }
+  </style>
 </head>
 <body>
-  <h2>Principal Login</h2>
-  <input id="userId" placeholder="Principal ID"><br><br>
-  <input id="pin" type="password" placeholder="PIN"><br><br>
-  <button onclick="login()">Login</button>
+  <div class="container">
+    <h2>Principal Login</h2>
+    <input type="text" id="userId" placeholder="Principal ID" required />
+    <input type="password" id="pin" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+    <p id="message"></p>
+  </div>
 
   <script>
     function login() {
-      const id = document.getElementById("userId").value;
+      const userId = document.getElementById("userId").value;
       const pin = document.getElementById("pin").value;
 
-      fetch("https://script.google.com/macros/s/AKfycbyKPMhlIjOIZwNK1X2l4awe1KOjj8APMNy0T05d-ZbAwMdQvBb-IoSZ-EoW2CUtHA/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbwbvQHy6ugPFGNsheatlsSqUCOgqwL-w8N6N-vG41p6uwwkkGUT2k0OLBqtMfmGiCVj/exec", {
         method: "POST",
-        body: new URLSearchParams({ role: "principal", id, pin })
+        body: new URLSearchParams({
+          id: userId,
+          pin: pin,
+          role: "principal"
+        })
       })
       .then(res => res.json())
       .then(data => {
-        if (data.status === "success") {
-          alert("Login successful!");
-          window.location.href = "principal_dashboard.html";
+        if (data.success) {
+          document.getElementById("message").innerText = "Welcome " + data.name;
+          // Redirect or load principal dashboard here
         } else {
-          alert("Login failed: " + data.message);
+          document.getElementById("message").innerText = data.message;
         }
+      })
+      .catch(err => {
+        document.getElementById("message").innerText = "Error connecting to server.";
       });
     }
   </script>
